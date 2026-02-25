@@ -1,0 +1,5 @@
+{
+  "name": "RepoScout",
+  "description": "Repository intelligence platform for scoring, categorizing, and matching GitHub repos to project requirements.",
+  "requestFramePermissions": []
+}
