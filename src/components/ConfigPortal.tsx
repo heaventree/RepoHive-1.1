@@ -8,7 +8,11 @@ import {
   Terminal,
   Activity,
   Plus,
-  X
+  X,
+  Key,
+  Globe,
+  Copy,
+  RefreshCw
 } from 'lucide-react';
 
 interface ConfigPortalProps {
@@ -25,7 +29,9 @@ export const ConfigPortal: React.FC<ConfigPortalProps> = ({ onBack }) => {
     license: 5
   });
   const [projectTypes, setProjectTypes] = useState<string[]>(['SAAS', 'SKILL', 'INTERNAL TOOL']);
+  const [externalApiKey, setExternalApiKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch('/api/config')
@@ -33,8 +39,20 @@ export const ConfigPortal: React.FC<ConfigPortalProps> = ({ onBack }) => {
       .then(data => {
         if (data.weights) setWeights(data.weights);
         if (data.projectTypes) setProjectTypes(data.projectTypes);
+        if (data.external_api_key) setExternalApiKey(data.external_api_key);
       });
   }, []);
+
+  const generateApiKey = () => {
+    const newKey = 'rs_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    setExternalApiKey(newKey);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -48,6 +66,11 @@ export const ConfigPortal: React.FC<ConfigPortalProps> = ({ onBack }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'projectTypes', value: projectTypes })
+      }),
+      fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'external_api_key', value: externalApiKey })
       })
     ]);
     setIsSaving(false);
@@ -129,6 +152,65 @@ export const ConfigPortal: React.FC<ConfigPortalProps> = ({ onBack }) => {
                 <div className="text-[10px] text-slate-500 mt-1 font-mono">CALCULATED FROM WEIGHTS</div>
               </div>
               <div className="absolute top-4 right-4 h-2 w-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="font-mono text-xs uppercase text-slate-400 tracking-widest flex items-center gap-2">
+              <Globe className="w-4 h-4" /> External Agent Access
+            </h3>
+            <div className="border border-slate-700 bg-bg-panel p-5 rounded-sm space-y-4">
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Allow external tools (like Replit Agents) to scan your library for useful repositories. 
+                Access requires a valid API key passed as a query parameter.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1.5">
+                    <Key className="w-3 h-3" /> API Key
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-bg-dark border border-slate-700 p-2 rounded-sm font-mono text-xs text-accent-blue truncate">
+                      {externalApiKey || 'No key generated'}
+                    </div>
+                    <button 
+                      onClick={generateApiKey}
+                      className="p-2 bg-slate-800 border border-slate-700 rounded-sm text-slate-400 hover:text-white transition-colors"
+                      title="Generate New Key"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => copyToClipboard(externalApiKey)}
+                      disabled={!externalApiKey}
+                      className="p-2 bg-slate-800 border border-slate-700 rounded-sm text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                      title="Copy Key"
+                    >
+                      {copied ? <span className="text-[10px] font-bold text-green-500">COPIED</span> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1.5">
+                    <Terminal className="w-3 h-3" /> Endpoint URL
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-bg-dark border border-slate-700 p-2 rounded-sm font-mono text-xs text-slate-400 truncate">
+                      {window.location.origin}/api/external/repos?apiKey=...
+                    </div>
+                    <button 
+                      onClick={() => copyToClipboard(`${window.location.origin}/api/external/repos?apiKey=${externalApiKey}`)}
+                      disabled={!externalApiKey}
+                      className="p-2 bg-slate-800 border border-slate-700 rounded-sm text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                      title="Copy Endpoint"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 

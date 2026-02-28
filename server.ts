@@ -177,6 +177,47 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // External API for agents (e.g., Replit)
+  app.get("/api/external/repos", (req, res) => {
+    const { q, minScore, limit = 20, apiKey } = req.query;
+    
+    // Validate API Key
+    const storedKey = db.prepare("SELECT value FROM config WHERE key = ?").get("external_api_key");
+    if (!storedKey || JSON.parse(storedKey.value) !== apiKey) {
+      return res.status(401).json({ error: "Invalid or missing API Key" });
+    }
+
+    let query = "SELECT id, owner, name, url, score, language, stars, description, ai_analysis FROM repos WHERE 1=1";
+    const params: any[] = [];
+
+    if (q) {
+      query += " AND (name LIKE ? OR description LIKE ? OR language LIKE ?)";
+      const searchPattern = `%${q}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    if (minScore) {
+      query += " AND score >= ?";
+      params.push(parseInt(minScore as string));
+    }
+
+    query += " ORDER BY score DESC LIMIT ?";
+    params.push(parseInt(limit as string));
+
+    try {
+      const repos = db.prepare(query).all(...params);
+      res.json({
+        count: repos.length,
+        repos: repos.map((r: any) => ({
+          ...r,
+          ai_analysis: r.ai_analysis ? JSON.parse(r.ai_analysis) : null
+        }))
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
