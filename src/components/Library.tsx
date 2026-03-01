@@ -15,7 +15,8 @@ import {
   Globe,
   ShieldCheck,
   ChevronDown,
-  X
+  X,
+  Star
 } from 'lucide-react';
 import { Repo } from '../types';
 
@@ -334,11 +335,12 @@ export const Library: React.FC<LibraryProps> = ({ onViewRepo, onBulkIngest, onGo
         ) : filteredRepos.length === 0 ? (
           <div className="p-8 text-center text-slate-500 font-mono text-sm">No repositories match your filters.</div>
         ) : viewMode === 'list' ? (
-          <div className="bg-bg-panel border border-border-main rounded-sm shadow-xl min-w-[800px]">
+          <div className="bg-bg-panel border border-border-main rounded-sm shadow-xl min-w-[900px]">
             <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border-main bg-[#162032] text-xs font-bold text-slate-400 uppercase tracking-wider font-mono sticky top-0 z-10">
               <div className="col-span-3 pl-2">Repository Name</div>
-              <div className="col-span-3 text-sm text-slate-300">Suitability / Best Use</div>
+              <div className="col-span-2 text-sm text-slate-300">Suitability</div>
               <div className="col-span-1">Status</div>
+              <div className="col-span-1">Stars</div>
               <div className="col-span-2">AI Score</div>
               <div className="col-span-1">Language</div>
               <div className="col-span-2 text-right pr-2">License</div>
@@ -368,15 +370,12 @@ export const Library: React.FC<LibraryProps> = ({ onViewRepo, onBulkIngest, onGo
                         </div>
                       </div>
                     </div>
-                    <div className="col-span-3 flex flex-wrap gap-1">
+                    <div className="col-span-2 flex flex-wrap gap-1">
                       {aiData?.useCases?.slice(0, 2).map((useCase: string, i: number) => (
-                        <span key={i} className="px-2 py-0.5 bg-accent-green/10 text-accent-green border border-accent-green/20 text-xs font-bold uppercase rounded-sm font-mono">
+                        <span key={i} className="px-2 py-0.5 bg-accent-green/10 text-accent-green border border-accent-green/20 text-[10px] font-bold uppercase rounded-sm font-mono truncate max-w-full">
                           {useCase}
                         </span>
                       ))}
-                      {aiData?.useCases?.length > 2 && (
-                        <span className="text-xs text-slate-500 font-mono">+{aiData.useCases.length - 2} more</span>
-                      )}
                     </div>
                     <div className="col-span-1">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border mono ${
@@ -387,6 +386,10 @@ export const Library: React.FC<LibraryProps> = ({ onViewRepo, onBulkIngest, onGo
                         {repo.status === 'ACTIVE' && <span className="w-1.5 h-1.5 rounded-full bg-green-400 mr-1.5 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>}
                         {repo.status}
                       </span>
+                    </div>
+                    <div className="col-span-1 flex items-center gap-1 text-slate-300 font-mono text-xs">
+                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <span>{repo.stars > 1000 ? `${(repo.stars / 1000).toFixed(1)}k` : repo.stars}</span>
                     </div>
                     <div className="col-span-2">
                       <div className="flex items-center gap-3">
@@ -438,6 +441,10 @@ export const Library: React.FC<LibraryProps> = ({ onViewRepo, onBulkIngest, onGo
                         {repo.owner[0].toUpperCase()}
                       </div>
                       <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-1 text-yellow-500 font-mono text-xs mb-1">
+                          <Star className="w-3 h-3 fill-yellow-500" />
+                          <span>{repo.stars > 1000 ? `${(repo.stars / 1000).toFixed(1)}k` : repo.stars}</span>
+                        </div>
                         <div className={`text-lg font-bold font-mono ${
                           repo.score > 80 ? 'text-accent-green' : repo.score > 50 ? 'text-accent-amber' : 'text-accent-red'
                         }`}>{repo.score}</div>
