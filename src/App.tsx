@@ -4,10 +4,11 @@ import { Ingest } from './components/Ingest';
 import { RepoDetail } from './components/RepoDetail';
 import { ProjectWorkspace } from './components/ProjectWorkspace';
 import { ConfigPortal } from './components/ConfigPortal';
+import { ApiConfig } from './components/ApiConfig';
 import { Monitoring } from './components/Monitoring';
 import { Policies } from './components/Policies';
 import { Repo } from './types';
-import { Bell, HelpCircle, Plus, Rocket, Database, Activity, ShieldCheck, Settings } from 'lucide-react';
+import { Bell, HelpCircle, Plus, Rocket, Database, Activity, ShieldCheck, Settings, Globe } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('library');
@@ -40,6 +41,8 @@ export default function App() {
         return <Policies />;
       case 'config':
         return <ConfigPortal onBack={() => setActiveTab('library')} />;
+      case 'api':
+        return <ApiConfig />;
       default:
         return <Library 
           onViewRepo={setSelectedRepo} 
@@ -88,6 +91,12 @@ export default function App() {
                 className={`flex items-center gap-1.5 transition-colors ${activeTab === 'policies' ? 'text-accent-blue border-b-2 border-accent-blue pb-0.5' : 'hover:text-white'}`}
               >
                 <ShieldCheck className="w-4 h-4" /> Policies
+              </button>
+              <button 
+                onClick={() => handleTabChange('api')}
+                className={`flex items-center gap-1.5 transition-colors ${activeTab === 'api' ? 'text-accent-blue border-b-2 border-accent-blue pb-0.5' : 'hover:text-white'}`}
+              >
+                <Globe className="w-4 h-4" /> API
               </button>
               <button 
                 onClick={() => handleTabChange('config')}
