@@ -1,20 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowLeft, 
-  MoreVertical, 
   RefreshCw, 
   Bookmark, 
-  ExternalLink,
-  TrendingUp,
-  Lightbulb,
-  CheckCircle,
-  ShieldCheck,
-  Zap,
-  History,
-  Star,
-  GitFork,
-  Database,
-  Github
+  TrendingUp, 
+  Lightbulb, 
+  CheckCircle, 
+  ShieldCheck, 
+  Zap, 
+  History, 
+  Star, 
+  GitFork, 
+  Database, 
+  Github,
+  ChevronDown
 } from 'lucide-react';
 import { Repo, Snapshot } from '../types';
 
@@ -25,6 +24,21 @@ interface RepoDetailProps {
 
 export const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onBack }) => {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [isReadmeExpanded, setIsReadmeExpanded] = useState(false);
+
+  const aiData = useMemo(() => {
+    try {
+      return repo.ai_analysis ? JSON.parse(repo.ai_analysis) : null;
+    } catch (e) {
+      return null;
+    }
+  }, [repo.ai_analysis]);
+
+  const formatRepoName = (id: string) => {
+    const parts = id.split('/');
+    const name = parts[parts.length - 1];
+    return name.split(/[-_]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
 
   useEffect(() => {
     fetch(`/api/repos/${repo.owner}/${repo.name}`)
@@ -43,69 +57,71 @@ export const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onBack }) => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-bg-dark custom-scrollbar">
-      <header className="bg-bg-panel border-b border-border-main sticky top-0 z-10">
-        <div className="px-6 py-4 flex items-center justify-between">
+      <header className="bg-bg-panel/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
+        <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-slate-800 rounded">
+            <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors p-1.5 hover:bg-white/5 rounded-lg">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="h-6 w-px bg-slate-700"></div>
+            <div className="h-6 w-px bg-white/10"></div>
             <div className="flex items-center gap-2 text-sm text-slate-400">
-              <span>Library</span>
-              <span>/</span>
-              <span className="font-mono text-white">{repo.id}</span>
+              <span className="hover:text-slate-200 cursor-pointer" onClick={onBack}>Library</span>
+              <span className="text-slate-600">/</span>
+              <span className="font-mono text-accent-blue/80">{repo.id}</span>
             </div>
           </div>
-          <button className="text-slate-400 hover:text-white transition-colors p-1">
-            <MoreVertical className="w-5 h-5" />
-          </button>
         </div>
 
-        <div className="px-6 pb-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-xl bg-slate-800 flex items-center justify-center border border-border-main overflow-hidden shrink-0 shadow-sm text-xl font-bold">
-                {repo.owner[0].toUpperCase()}
-              </div>
+        <div className="px-6 pb-5 pt-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
               <div>
                 <h1 className="text-3xl font-bold text-white leading-tight flex items-center gap-3">
-                  {repo.id}
-                  <span className="px-2.5 py-0.5 bg-green-500/10 text-green-400 text-xs font-medium rounded-full border border-green-500/20 uppercase tracking-wide">Active</span>
-                  <a 
-                    href={repo.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-slate-500 hover:text-white transition-colors ml-2"
-                    title="View on GitHub"
-                  >
-                    <Github className="w-6 h-6" />
-                  </a>
+                  {formatRepoName(repo.id)}
+                  <span className="px-2.5 py-0.5 bg-green-500/10 text-green-400 text-[9px] font-bold rounded-full border border-green-500/20 uppercase tracking-widest">Active</span>
                 </h1>
-                <div className="flex items-center gap-4 mt-2 text-base">
-                  <span className="text-slate-400 font-mono flex items-center gap-1">
-                    <Zap className="w-4 h-4" /> v1.0.0
+                <div className="flex items-center gap-4 mt-2 text-xs">
+                  <span className="text-slate-400 font-mono flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-accent-blue" /> v1.0.0
                   </span>
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <History className="w-4 h-4" /> Updated {new Date(repo.last_push).toLocaleDateString()}
+                  <span className="text-slate-400 flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5" /> Updated {new Date(repo.last_push).toLocaleDateString()}
                   </span>
-                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium ${getLicenseColor(repo.license)}`}>
-                    <ShieldCheck className="w-4 h-4" /> {repo.license} License
+                  <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider ${getLicenseColor(repo.license)}`}>
+                    <ShieldCheck className="w-3.5 h-3.5" /> {repo.license}
                   </span>
+                  {aiData?.tags?.slice(0, 2).map((tag: string, idx: number) => (
+                    <span key={idx} className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[9px] font-bold rounded-md border border-blue-500/20 uppercase tracking-wider">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-6">
-              <div className="text-right">
-                <div className="text-4xl font-bold text-accent-blue font-mono tracking-tight">{repo.score}<span className="text-xl text-slate-500 font-normal">/100</span></div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Health Score</div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-4xl font-bold text-accent-blue/90 font-mono tracking-tighter leading-none drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">{repo.score}<span className="text-lg text-slate-500 font-normal ml-1">/100</span></div>
+                  <div className="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">AI Viability Index</div>
+                  <div className="text-[8px] text-slate-600 uppercase font-medium mt-0.5">Based on 12 key metrics</div>
+                </div>
               </div>
-              <div className="h-10 w-px bg-slate-700"></div>
+              <div className="h-10 w-px bg-white/10"></div>
               <div className="flex gap-2">
-                <button className="px-4 py-2 bg-accent-blue hover:bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                <a 
+                  href={repo.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all text-xs font-bold rounded-xl flex items-center gap-2 active:scale-95"
+                >
+                  <Github className="w-4 h-4" />
+                  <span>Github</span>
+                </a>
+                <button className="px-4 py-2 bg-accent-blue/5 border border-accent-blue/20 hover:bg-accent-blue/10 text-accent-blue text-xs font-bold rounded-xl flex items-center gap-2 transition-all active:scale-95">
                   <RefreshCw className="w-4 h-4" />
                   Rescan
                 </button>
-                <button className="px-4 py-2 bg-bg-dark border border-border-main hover:bg-slate-800 text-slate-200 text-sm font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                <button className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-2 transition-all active:scale-95">
                   <Bookmark className="w-4 h-4 text-slate-400" />
                   Watch
                 </button>
@@ -117,45 +133,31 @@ export const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onBack }) => {
 
       <main className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-6">
-          <section className="bg-bg-panel rounded-xl border border-border-main p-6 shadow-sm relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <Zap className="text-white w-5 h-5" />
+          <section className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-5 shadow-sm relative overflow-hidden">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <Zap className="text-white w-4 h-4" />
                 </div>
-                <h2 className="text-xl font-bold text-white">AI Smart Summary</h2>
+                <h2 className="text-lg font-bold text-white">AI Smart Summary</h2>
               </div>
-              <span className="text-xs bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full border border-purple-500/20 font-medium">Model: Gemini 3 Flash</span>
-            </div>
-            <p className="text-slate-300 leading-relaxed text-base mb-6">
-              {repo.description || "No description available for this repository."}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-md border border-blue-500/20">FRONTEND</span>
-              <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-md border border-blue-500/20">JAVASCRIPT</span>
-              <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-md border border-blue-500/20">LIBRARY</span>
-            </div>
-          </section>
-
-          {repo.readme && (
-            <section className="bg-bg-panel rounded-xl border border-border-main p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Database className="w-5 h-5 text-accent-blue" />
-                <h3 className="text-lg font-bold text-white">README Insights</h3>
-              </div>
-              <div className="prose prose-invert max-w-none text-base text-slate-400 line-clamp-[10] overflow-hidden relative">
-                <div className="whitespace-pre-wrap font-mono text-sm bg-bg-dark/50 p-4 rounded-lg border border-border-main/50">
-                  {repo.readme.substring(0, 2000)}
-                  {repo.readme.length > 2000 && "..."}
-                </div>
-                {repo.readme.length > 2000 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-bg-panel to-transparent flex items-end justify-center pb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Truncated for preview</span>
-                  </div>
+              <div className="flex gap-2">
+                {aiData?.tags?.map((tag: string, idx: number) => (
+                  <span key={idx} className="px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md border border-blue-500/20 uppercase tracking-wider">
+                    {tag}
+                  </span>
+                )) || (
+                  <>
+                    <span className="px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md border border-blue-500/20 uppercase tracking-wider">FRONTEND</span>
+                    <span className="px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md border border-blue-500/20 uppercase tracking-wider">JAVASCRIPT</span>
+                  </>
                 )}
               </div>
-            </section>
-          )}
+            </div>
+            <p className="text-slate-300 leading-relaxed text-sm">
+              {aiData?.summary || repo.description || "No description available for this repository."}
+            </p>
+          </section>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-bg-panel rounded-xl border border-border-main p-5 shadow-sm">
@@ -164,14 +166,12 @@ export const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onBack }) => {
                 Best For Use Cases
               </h4>
               <ul className="space-y-3">
-                <li className="flex items-start gap-3 text-base text-slate-300">
-                  <CheckCircle className="w-5 h-5 text-accent-green shrink-0 mt-0.5" />
-                  <span>Single Page Applications (SPAs)</span>
-                </li>
-                <li className="flex items-start gap-3 text-base text-slate-300">
-                  <CheckCircle className="w-5 h-5 text-accent-green shrink-0 mt-0.5" />
-                  <span>Complex State Management</span>
-                </li>
+                {(aiData?.useCases || ["Single Page Applications (SPAs)", "Complex State Management"]).map((useCase: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-3 text-base text-slate-300">
+                    <CheckCircle className="w-5 h-5 text-accent-green shrink-0 mt-0.5" />
+                    <span>{useCase}</span>
+                  </li>
+                ))}
               </ul>
             </div>
             <div className="bg-bg-panel rounded-xl border border-border-main p-5 shadow-sm">
@@ -180,16 +180,64 @@ export const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onBack }) => {
                 Integration Notes
               </h4>
               <div className="space-y-3">
-                <div className="p-3 bg-bg-dark rounded-lg border border-border-main">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-sm font-bold text-white">Next.js</span>
-                    <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-400 font-medium rounded-full">Perfect Match</span>
+                {aiData?.integrationNotes?.map((note: any, idx: number) => (
+                  <div key={idx} className="p-3 bg-bg-dark rounded-lg border border-border-main">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm font-bold text-white">{note.platform}</span>
+                      <span className={`text-xs px-2 py-0.5 font-medium rounded-full ${
+                        note.match === 'Perfect Match' ? 'bg-green-500/10 text-green-400' : 'bg-blue-500/10 text-blue-400'
+                      }`}>
+                        {note.match}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">{note.description}</p>
                   </div>
-                  <p className="text-xs text-slate-500">Official recommendation for production apps.</p>
-                </div>
+                )) || (
+                  <div className="p-3 bg-bg-dark rounded-lg border border-border-main">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm font-bold text-white">Next.js</span>
+                      <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-400 font-medium rounded-full">Perfect Match</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Official recommendation for production apps.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          {repo.readme && (
+            <section className="bg-bg-panel rounded-xl border border-border-main p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Database className="w-5 h-5 text-accent-blue" />
+                  <h3 className="text-lg font-bold text-white">README Insights</h3>
+                </div>
+                <button 
+                  onClick={() => setIsReadmeExpanded(!isReadmeExpanded)}
+                  className="text-xs font-bold text-accent-blue hover:text-blue-400 transition-colors uppercase tracking-widest flex items-center gap-1"
+                >
+                  {isReadmeExpanded ? 'Show Less' : 'Expand Full Content'}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isReadmeExpanded ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              <div className={`prose prose-invert max-w-none text-base text-slate-400 relative ${!isReadmeExpanded ? 'max-h-[400px] overflow-hidden' : ''}`}>
+                <div className="whitespace-pre-wrap font-mono text-sm bg-bg-dark/50 p-4 rounded-lg border border-border-main/50">
+                  {isReadmeExpanded ? repo.readme : repo.readme.substring(0, 2000)}
+                  {!isReadmeExpanded && repo.readme.length > 2000 && "..."}
+                </div>
+                {!isReadmeExpanded && repo.readme.length > 2000 && (
+                  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-bg-panel to-transparent flex items-end justify-center pb-4">
+                    <button 
+                      onClick={() => setIsReadmeExpanded(true)}
+                      className="px-4 py-2 bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-xs font-bold rounded-lg hover:bg-accent-blue/20 transition-all"
+                    >
+                      Read More
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
         <div className="lg:col-span-4 space-y-6">

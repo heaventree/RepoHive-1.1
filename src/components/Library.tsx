@@ -547,6 +547,11 @@ export const Library: React.FC<LibraryProps> = ({ onViewRepo, onBulkIngest, onGo
                               <ChevronRight className="w-3 h-3" />
                               View Details
                             </span>
+                            {aiData?.tags?.slice(0, 2).map((tag: string, idx: number) => (
+                              <span key={idx} className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[9px] font-bold rounded border border-blue-500/20 uppercase tracking-wider">
+                                {tag}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>
